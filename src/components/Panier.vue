@@ -17,6 +17,7 @@
       </tr>
     </tbody>
   </v-table>
+
   <v-divider inset />
   <v-card
     class="mx-auto mt-4"
@@ -38,30 +39,75 @@
       />
     </template>
   </v-card>
+  <v-dialog
+    v-model="dialog"
+    
+  >
+    <v-card
+        append-icon="$close"
+        class="mx-auto"
+        elevation="16"
+        width="500"
+        title="Achat validé"
+      >
+        <template v-slot:append>
+          <v-btn icon="$close" variant="text" @click="dialog = false"></v-btn>
+        </template>
+
+        <v-divider></v-divider>
+
+        <div class="py-12 text-center">
+          <v-icon
+            class="mb-6"
+            color="success"
+            icon="mdi-check-circle-outline"
+            size="128"
+          ></v-icon>
+
+          <div class="text-h4 font-weight-bold">Payement Réussi</div>
+        </div>
+
+        <v-divider></v-divider>
+
+        <div class="pa-4 text-end">
+          <v-btn
+            class="text-none"
+            color="medium-emphasis"
+            min-width="92"
+            variant="outlined"
+            rounded
+            @click="dialog = false"
+          >
+            Close
+          </v-btn>
+        </div>
+      </v-card>
+  </v-dialog>
 </template>
 <script setup>
   import axios from 'axios'
   import { onMounted, onUnmounted, ref } from 'vue'
-  import { useBilletStore } from '@/stores/billetStore'
   import { useCartStore } from '@/stores/cart'
+  import fetch from '../plugins/axios'
   const Value_billet = ref('')
   const Current_billet = ref(0)
   const canValidate = ref(true)
   const cart = useCartStore()
+  const rendu = ref(0)
+  const dialog = ref(false)
   let intervalId = null
 
   async function achat () {
-    await axios.post('/orders', {
+    /* const response = await fetch.post('/orders', {
       items: cart.items,
       total: cart.cartTotal,
-    })
-    console.log('Orders Saved succesfully')
+      totalPaye: Current_billet.value,
+      rendu: rendu.value,
+    })  console.log(response.data) */
+    dialog.value = true
+    console.log('Orders Saved succesfully : total normal : ' + cart.cartTotal + 'total détecte : ' + Current_billet.value + 'rendu : ' + rendu.value)
   }
-  const billetStore = useBilletStore()
-  console.log(billetStore.value)
-  const detectBillet = () => {
-    billetStore.detectBillet()
-  }
+
   const val_billet = async () => {
     try {
       const response = await axios.get('http://localhost:5000/last_result')
@@ -71,8 +117,8 @@
 
       if (Current_billet.value >= cart.cartTotal) {
         canValidate.value = false
-        const rendu = Current_billet.value - cart.cartTotal
-        if (rendu > 0) {
+        rendu.value = Current_billet.value - cart.cartTotal
+        if (rendu.value > 0) {
           console.log('Monnaie à rendre :', rendu)
         }
       }

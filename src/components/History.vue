@@ -85,15 +85,18 @@
       <v-col cols="12">
         <v-card>
           <v-card-title>
-            Commande #{{ order.id }} - Total: {{ order.total }} - {{ formatDate(order.createdAt) }}
+            Commande #{{ order.id }} - {{ formatDate(order.createdAt) }} <br>
+            Total: {{ order.total }} 
           </v-card-title>
           <v-card-text>
-            <v-data-table
-              class="elevation-1"
-              :headers="headers"
-              dense
-              :items="parseItems(order.items)"
-            ></v-data-table>
+            <v-data-table-virtual class="elevation-1" dense :headers="headers.value" :items="parseItems(order.items)">
+              <template #bottom>
+                <div class="text-right font-weight-bold pr-4">
+                  Payé: {{ order.total }} <br></br>
+                  Rendu: {{ order.rendu }}
+                </div>
+              </template>
+            </v-data-table-virtual>
           </v-card-text>
         </v-card>
       </v-col>
@@ -102,38 +105,38 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import axios from '@/plugins/axios'
+  import { onMounted, ref } from 'vue'
+  import axios from '@/plugins/axios'
 
-const orders = ref([])
+  const orders = ref([])
 
-const headers = [
-  { text: 'Produit', value: 'name' },
-  { text: 'Catégorie', value: 'category' },
-  { text: 'Prix', value: 'price' },
-  { text: 'Quantité', value: 'quantity' },
-  { text: 'Total', value: 'total' }
-]
+  const headers = [
+    { text: 'Produit', value: 'name' },
+    { text: 'Catégorie', value: 'category' },
+    { text: 'Prix(Ariary)', value: 'price' },
+    { text: 'Quantité', value: 'quantity' },
+    { text: 'Total', value: 'total' },
+  ]
 
-function parseItems(itemsString) {
-  try {
-    return JSON.parse(itemsString)
-  } catch (e) {
-    console.error('Erreur parsing items', e)
-    return []
+  function parseItems (itemsString) {
+    try {
+      return JSON.parse(itemsString)
+    } catch (error) {
+      console.error('Erreur parsing items', error)
+      return []
+    }
   }
-}
 
-function formatDate(dateString) {
-  return new Date(dateString).toLocaleString()
-}
-
-onMounted(async () => {
-  try {
-    const res = await axios.get('/orders')
-    orders.value = res.data
-  } catch (err) {
-    console.error(err)
+  function formatDate (dateString) {
+    return new Date(dateString).toLocaleString()
   }
-})
+
+  onMounted(async () => {
+    try {
+      const res = await axios.get('/orders')
+      orders.value = res.data
+    } catch (error) {
+      console.error(error)
+    }
+  })
 </script>
