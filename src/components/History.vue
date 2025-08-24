@@ -1,4 +1,4 @@
-<template>
+<!--<template>
   <v-table striped="even">
     <thead>
       <tr>
@@ -22,8 +22,9 @@
   </v-table>
 </template>
 <script setup>
-  import { ref } from 'vue'
-
+  import { onMounted, ref, toRaw } from 'vue'
+  import axios from '../plugins/axios'
+  const Orders = ref([])
   const desserts = ref([
     {
       name: 'Frozen Yogurt',
@@ -66,4 +67,73 @@
       calories: 518,
     },
   ])
+  const fetchOrders = async () => {
+    try {
+      const response = await axios.get('/orders')
+      Orders.value = toRaw(response.data)
+      console.log(toRaw(Orders.value))
+    } catch (error) {
+      console.error('Erreur GET :', error)
+    }
+  }
+  onMounted(fetchOrders)
+</script>
+-->
+<template>
+  <v-container>
+    <v-row v-for="order in orders" :key="order.id" class="mb-6">
+      <v-col cols="12">
+        <v-card>
+          <v-card-title>
+            Commande #{{ order.id }} - Total: {{ order.total }} - {{ formatDate(order.createdAt) }}
+          </v-card-title>
+          <v-card-text>
+            <v-data-table
+              class="elevation-1"
+              :headers="headers"
+              dense
+              :items="parseItems(order.items)"
+            ></v-data-table>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import axios from '@/plugins/axios'
+
+const orders = ref([])
+
+const headers = [
+  { text: 'Produit', value: 'name' },
+  { text: 'Catégorie', value: 'category' },
+  { text: 'Prix', value: 'price' },
+  { text: 'Quantité', value: 'quantity' },
+  { text: 'Total', value: 'total' }
+]
+
+function parseItems(itemsString) {
+  try {
+    return JSON.parse(itemsString)
+  } catch (e) {
+    console.error('Erreur parsing items', e)
+    return []
+  }
+}
+
+function formatDate(dateString) {
+  return new Date(dateString).toLocaleString()
+}
+
+onMounted(async () => {
+  try {
+    const res = await axios.get('/orders')
+    orders.value = res.data
+  } catch (err) {
+    console.error(err)
+  }
+})
 </script>
