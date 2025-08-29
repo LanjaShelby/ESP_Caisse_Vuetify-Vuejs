@@ -86,14 +86,28 @@
         <v-card>
           <v-card-title>
             Commande #{{ order.id }} - {{ formatDate(order.createdAt) }} <br>
-            Total: {{ order.total }} 
+            Total: {{ order.total }}
           </v-card-title>
+          <v-btn
+            append-icon="mdi mdi-invoice-text-check-outline"
+            class="ml-5"
+            :color="getFactureColor(order.etat_facture)"
+            @click="Facturation(order.id)"
+          >
+            Facture
+            <v-icon color="warning" />
+          </v-btn>
           <v-card-text>
             <v-data-table-virtual class="elevation-1" dense :headers="headers.value" :items="parseItems(order.items)">
               <template #bottom>
                 <div class="text-right font-weight-bold pr-4">
-                  Payé: {{ order.total }} <br></br>
+                  Payé: {{ order.total }} <br>
                   Rendu: {{ order.rendu }}
+                </div>
+              </template>
+              <template #top>
+                <div class="text-left font-weight-bold pr-4">
+                  Transactions: {{ order.no_transactions }}
                 </div>
               </template>
             </v-data-table-virtual>
@@ -105,11 +119,11 @@
 </template>
 
 <script setup>
-  import { onMounted, ref } from 'vue'
+  import { onMounted, onUnmounted, ref } from 'vue'
   import axios from '@/plugins/axios'
 
   const orders = ref([])
-
+  let intervalId = null
   const headers = [
     { text: 'Produit', value: 'name' },
     { text: 'Catégorie', value: 'category' },
@@ -130,13 +144,42 @@
   function formatDate (dateString) {
     return new Date(dateString).toLocaleString()
   }
+  const getFactureColor = etat => {
+    switch (etat) {
+      case true : {
+        return 'green'
+      }
+      case false: {
+        return 'orange'
+      }
+      default: {
+        return 'grey'
+      }
+    }
+  }
+  const Facturation = async orderId => {
+    const response = await axios.get(`/orders/${orderId}/facture`)
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
 
-  onMounted(async () => {
+    // déclenche téléchargement
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `facture-${orderId}.pdf`
+    link.click()
+  }
+  const fetchOrders = async () => {
     try {
       const res = await axios.get('/orders')
       orders.value = res.data
     } catch (error) {
       console.error(error)
     }
+  }
+  onMounted(() => {
+    intervalId = setInterval(fetchOrders, 2000)
+  })
+  onUnmounted(() => {
+    clearInterval(intervalId)
   })
 </script>

@@ -41,76 +41,82 @@
   </v-card>
   <v-dialog
     v-model="dialog"
-    
   >
     <v-card
-        append-icon="$close"
-        class="mx-auto"
-        elevation="16"
-        width="500"
-        title="Achat validé"
-      >
-        <template v-slot:append>
-          <v-btn icon="$close" variant="text" @click="dialog = false"></v-btn>
-        </template>
+      append-icon="$close"
+      class="mx-auto"
+      elevation="16"
+      title="Achat validé"
+      width="500"
+    >
+      <template #append>
+        <v-btn icon="$close" variant="text" @click="dialog = false" />
+      </template>
 
-        <v-divider></v-divider>
+      <v-divider />
 
-        <div class="py-12 text-center">
-          <v-icon
-            class="mb-6"
-            color="success"
-            icon="mdi-check-circle-outline"
-            size="128"
-          ></v-icon>
+      <div class="py-12 text-center">
+        <v-icon
+          class="mb-6"
+          color="success"
+          icon="mdi-check-circle-outline"
+          size="128"
+        />
 
-          <div class="text-h4 font-weight-bold">Payement Réussi</div>
-        </div>
+        <div class="text-h4 font-weight-bold">Payement Réussi</div>
+      </div>
 
-        <v-divider></v-divider>
+      <v-divider />
 
-        <div class="pa-4 text-end">
-          <v-btn
-            class="text-none"
-            color="medium-emphasis"
-            min-width="92"
-            variant="outlined"
-            rounded
-            @click="dialog = false"
-          >
-            Close
-          </v-btn>
-        </div>
-      </v-card>
+      <div class="pa-4 text-end">
+        <v-btn
+          class="text-none"
+          color="medium-emphasis"
+          min-width="92"
+          rounded
+          variant="outlined"
+          @click="dialog = false"
+        >
+          Fermer
+        </v-btn>
+      </div>
+    </v-card>
   </v-dialog>
 </template>
 <script setup>
   import axios from 'axios'
   import { onMounted, onUnmounted, ref } from 'vue'
+  import { useCaisseStore } from '@/stores/caisse'
   import { useCartStore } from '@/stores/cart'
   import fetch from '../plugins/axios'
   const Value_billet = ref('')
+  const detect = ref('')
   const Current_billet = ref(0)
   const canValidate = ref(true)
   const cart = useCartStore()
   const rendu = ref(0)
   const dialog = ref(false)
   let intervalId = null
-
+  const caisse = useCaisseStore()
   async function achat () {
-    /* const response = await fetch.post('/orders', {
+    const response = await fetch.post('/orders', {
+      etat_facture: false,
       items: cart.items,
       total: cart.cartTotal,
       totalPaye: Current_billet.value,
       rendu: rendu.value,
-    })  console.log(response.data) */
+    })
+    console.log(response.data)
     dialog.value = true
+    caisse.ajouterMontant(Number(Current_billet.value))
+    caisse.retirerMontant(Number(rendu.value))
+    cart.clearCart()
     console.log('Orders Saved succesfully : total normal : ' + cart.cartTotal + 'total détecte : ' + Current_billet.value + 'rendu : ' + rendu.value)
   }
 
   const val_billet = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/last_result')
+      const response = await axios.get('http://localhost:5000/get_latest_bill')
       Value_billet.value = Number(response.data.valeur_billet) || 0
 
       Current_billet.value += Value_billet.value
@@ -128,6 +134,7 @@
   }
   onMounted(() => {
     intervalId = setInterval(val_billet, 2000) // toutes les 2s
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   })
   onUnmounted(() => {
     clearInterval(intervalId)

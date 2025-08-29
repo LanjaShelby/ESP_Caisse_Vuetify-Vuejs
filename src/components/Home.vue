@@ -1,25 +1,21 @@
 <template>
    <v-card
-    class="mx-auto"
+    class="mx-auto mt-10"
     max-width="344"
   >
     <v-card-text>
-      <div>Word of the Day</div>
+      <p class="text-h4 font-weight-black">TOTAL CAISSE : </p>
 
-      <p class="text-h4 font-weight-black">be•nev•o•lent</p>
-
-      <p>adjective</p>
-
-      <div class="text-medium-emphasis">
-        well meaning and kindly.<br>
-        "a benevolent smile"
+      <div class="text-h4">
+        {{totalCaisse}} Ariary
       </div>
     </v-card-text>
 
     <v-card-actions>
       <v-btn
         color="deep-purple-accent-4"
-        text="Learn More"
+        text="Transactions"
+        to="/history"
         variant="text"
       ></v-btn>
     </v-card-actions>
@@ -82,6 +78,10 @@
   </v-row> -->
 </template>
 <script setup>
+  import axios from 'axios'
+  import { onMounted, ref } from 'vue'
+  import { useCaisseStore } from '@/stores/caisse'
+  const detect = ref('')
   const desserts = [
     {
       name: 'Frozen Yogurt',
@@ -92,4 +92,16 @@
       calories: 237,
     },
   ]
+  const caisse = useCaisseStore()
+  const totalCaisse = caisse.totalCaisse // réactif automatiquement
+  const detect_billet = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/get_latest_bill')
+      detect.value = Number(response.data.prediction) || 0
+      console.log(detect.value)
+    } catch (error) {
+      console.error('Erreur API Python :', error)
+    }
+  }
+  onMounted(detect_billet)
 </script>
